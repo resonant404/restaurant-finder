@@ -42,6 +42,10 @@ If you only want one target, set `SKIP_LOCAL_INSTALL=1` or `SKIP_ZIP=1` in the e
 > "Somewhere good for a summer day in Soho"
 → Branches first: outdoor seating? air-conditioned? summery food? — then searches based on your pick.
 
+*If none of the above are available, we offer a fallback:*
+
+![](assets/dyson.jpg)
+
 ## License
 
 MIT
