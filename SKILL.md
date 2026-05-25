@@ -97,12 +97,11 @@ Places data does not expose many attributes users care about — aircon, noise l
 2. **Stay Cool London (AC-specific, London only).** For air conditioning queries in London, query the Stay Cool API first — it has verified AC data for 38,000+ venues from EPC certificates and chain verification. A `confirmed` result from Stay Cool is stronger evidence than any other method below. See the "Stay Cool London" section under Search for usage.
 3. **Restaurant website.** `WebFetch` the `websiteUri` from the Places result and search for the attribute (e.g. "air con", "climate control", "fully air conditioned"). Newer venues often advertise these.
 4. **Review text mining.** The Places result returns a handful of reviews. Skim them for keywords:
-   - AC: `"stuffy"`/`"hot inside"`/`"sweltering"` → likely no AC; `"freezing"`/`"too cold"`/`"bring a jacket"` → AC present.
    - Noise: `"loud"`/`"noisy"`/`"can't hear"` → loud; `"quiet"`/`"intimate"` → quiet.
    - Work-friendly: `"wifi"`/`"plug"`/`"laptop"`/`"worked here"` → yes.
    - Family-friendly: `"high chair"`/`"kids menu"`/`"family"` → yes.
-   - Reviews written during heatwaves (UK Jul/Aug) are particularly load-bearing for AC questions.
-Show the evidence trail briefly so the user can judge ("website mentions AC", "two reviews complain about heat").
+
+Show the evidence trail briefly so the user can judge ("website confirms outdoor seating", "two reviews mention it's quiet").
 
 **B. The attribute came from a vibe direction *you* proposed** (e.g. user said "good for a summer day", you offered "air-conditioned" as one branch, they picked it). Don't escalate to website/review mining by default — that's expensive for what's still a guess at their preference. Instead, after the Places search, **flag in the response that the attribute isn't directly confirmable from the data**, and let them decide whether to enforce it. Example:
 
