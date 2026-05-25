@@ -32,6 +32,24 @@ git pull && ./build.sh
 
 If you only want one target, set `SKIP_LOCAL_INSTALL=1` or `SKIP_ZIP=1` in the environment.
 
+## Search backends
+
+The skill tries three sources in order — pick whichever you're willing to set up:
+
+**1. Google Maps MCP server (preferred).** Structured Places data, no script in the loop. Install Google's official Maps Platform MCP server (or any community one), register it in Claude Code, and the skill auto-detects it. You'll need a Google Cloud project with the Places API (New) enabled and a key — the $200/month free tier covers normal personal use.
+
+**2. Bundled fallback script.** If no MCP server is found, the skill runs `scripts/places_search.py` (stdlib Python, ships with the install). Same Google Places API under the hood — set the key in your shell:
+
+```bash
+export GOOGLE_PLACES_API_KEY=...
+```
+
+Add it to your `.zshrc` / `.bashrc` so Claude Code inherits it. If you keep secrets in a manager like 1Password / Bitwarden / `pass`, export the key the same way you do for any other CLI — e.g. `export GOOGLE_PLACES_API_KEY="$(op read 'op://...')"` or run Claude via `op run --env-file=... --`. The script just reads `$GOOGLE_PLACES_API_KEY`; it doesn't care how the variable got populated.
+
+For the claude.ai upload zip, set the key before running `build.sh` and it'll be baked into the zip's `scripts/.env` (zip only — never the repo, never the local install).
+
+**3. Web search.** If neither (1) nor (2) is configured, the skill falls back to web search and prepends a warning to its response. Results work but lose structured fields (price level, current open status, etc.) and lean on paraphrased article snippets.
+
 ## Examples
 
 **Explicit:**

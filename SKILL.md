@@ -26,7 +26,27 @@ Help the user find a restaurant that actually matches what they want, including 
 
    If the criteria are explicit and clear, skip this step and search directly.
 
-4. **Search.** Use the `places_search` tool. Build queries from the resolved criteria plus the location. For vibes that survived interpretation (e.g. "outdoor seating in Soho"), put the concrete attribute into the query — Google handles "restaurants with terrace Soho London" better than "summery restaurants Soho". For multi-interpretation searches the user wants a mix of, run parallel queries in a single `places_search` call.
+4. **Search.** Pick the best available backend in this order — A, then B, then C.
+
+   **A. Google Maps MCP server.** Check your available tool list for an MCP places-search tool — anything matching `mcp__*maps*` or `mcp__*places*` (e.g. `mcp__google_maps__search_places`). If one is present, use it. This is the preferred path: structured JSON, no script execution, no fragile parsing.
+
+   **B. Bundled fallback script.** Otherwise, run the bundled script via Bash:
+   ```
+   python3 "$SKILL_DIR/scripts/places_search.py" "<query1>" ["<query2>" ...]
+   ```
+   `$SKILL_DIR` is the directory containing this SKILL.md (typically `~/.claude/skills/restaurant-finder`). Pass each interpretation as a separate argument — the script runs them in parallel and returns one JSON object keyed by query.
+
+   - **Exit 0:** parse and use the JSON.
+   - **Exit 3 with stderr `GOOGLE_PLACES_API_KEY not set`:** fall through to (C).
+   - **Any other non-zero exit:** also fall through to (C).
+
+   **C. Web search fallback.** Use `web_search`. When you fall back to (C), **the response to the user MUST begin with this exact warning** (verbatim, on its own line at the top):
+
+   > ⚠ No Places API available — using web search. Results are paraphrased from articles and may be outdated, incomplete, or inaccurate. See the README for setup.
+
+   Do NOT include the warning when (A) or (B) succeeded.
+
+   **Query construction (all tiers):** combine resolved criteria with the location. "restaurants with terrace Soho London" beats "summery restaurants Soho" — concrete attributes outrank mood words. For multi-interpretation searches the user wants a mix of, fire parallel queries: multiple args to the script in (B), or multiple `web_search` / MCP calls in a single message.
 
 5. **Filter and rank.** Skim results for fit. Drop obvious mismatches (chain when they wanted independent, wrong cuisine, closed permanently, very low rating with few reviews). Rank by how well each matches the *actual* criteria, not just by Google rating.
 
@@ -39,7 +59,7 @@ Help the user find a restaurant that actually matches what they want, including 
 
 ## Things to get right
 
-**Don't invent details.** Only state facts that came from the search results (rating, address, hours, listed features). Do not claim "great wine list" or "famous for X" unless the result data actually supports it. If the user wants a specific guarantee ("definitely has outdoor seating"), say where you got that — and if it's not in the data, say so and suggest they check the restaurant directly.
+**Don't invent details.** Only state facts that came from the search results (rating, address, hours, listed features). Do not claim "great wine list" or "famous for X" unless the result data actually supports it. If the user wants a specific guarantee ("definitely has outdoor seating"), say where you got that — and if it's not in the data, say so and suggest they check the restaurant directly. **When using the (C) web_search fallback, this rule binds especially hard: snippets are paraphrased third-party prose, not authoritative facts. Hedge claims that aren't directly quoted in the snippet.**
 
 **Match the register.** A "where should I grab a quick lunch" query gets a tighter, more casual answer than "anniversary dinner". Don't over-engineer.
 

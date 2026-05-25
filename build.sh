@@ -34,6 +34,9 @@ trap 'rm -rf "$stage"' EXIT
 
 rsync -a \
   --exclude='.git/' \
+  --exclude='.gitignore' \
+  --exclude='.env' \
+  --exclude='__pycache__/' \
   --exclude='build.sh' \
   --exclude='dist/' \
   --exclude='LICENSE' \
@@ -51,6 +54,16 @@ if [ -z "${SKIP_LOCAL_INSTALL:-}" ]; then
 fi
 
 if [ -z "${SKIP_ZIP:-}" ]; then
+  # Bake the API key into the zip ONLY (never the local install above, never
+  # the repo). claude.ai uploaded skills can't read per-user env vars, so this
+  # is the only way the bundled fallback script can authenticate from the
+  # claude.ai sandbox. The local install reads $GOOGLE_PLACES_API_KEY directly.
+  if [ -n "${GOOGLE_PLACES_API_KEY:-}" ]; then
+    printf 'GOOGLE_PLACES_API_KEY=%s\n' "$GOOGLE_PLACES_API_KEY" > "$stage/$skill_name/scripts/.env"
+    chmod 600 "$stage/$skill_name/scripts/.env"
+    echo "Baked GOOGLE_PLACES_API_KEY into zip (not into local install)"
+  fi
+
   dist="$repo_dir/dist"
   mkdir -p "$dist"
   zip_path="$dist/$skill_name.zip"
