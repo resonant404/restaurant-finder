@@ -57,6 +57,34 @@ Help the user find a restaurant that actually matches what they want, including 
 
    Aim for 3–5 picks. More than that is noise; fewer feels thin unless the brief is very narrow.
 
+## Verifying attributes Places can't confirm
+
+Places data does not expose many attributes users care about — aircon, noise level, laptop-friendliness, dish availability. How you handle this depends on *how the attribute entered the conversation*.
+
+**A. User explicitly insists on the attribute** (e.g. "must have aircon", "needs to be quiet enough to talk", "definitely has high chairs"). Don't just hedge — actually try to verify. In rough order of effort:
+
+1. **Check Places fields you might have skipped.** `accessibilityOptions` is a real field — use it directly for wheelchair access rather than inferring. Same for `outdoor_seating` types, `reservable`, etc.
+2. **Restaurant website.** `WebFetch` the `websiteUri` from the Places result and search for the attribute (e.g. "air con", "climate control", "fully air conditioned"). Newer venues often advertise these.
+3. **Review text mining.** The Places result returns a handful of reviews. Skim them for keywords:
+   - AC: `"stuffy"`/`"hot inside"`/`"sweltering"` → likely no AC; `"freezing"`/`"too cold"`/`"bring a jacket"` → AC present.
+   - Noise: `"loud"`/`"noisy"`/`"can't hear"` → loud; `"quiet"`/`"intimate"` → quiet.
+   - Work-friendly: `"wifi"`/`"plug"`/`"laptop"`/`"worked here"` → yes.
+   - Family-friendly: `"high chair"`/`"kids menu"`/`"family"` → yes.
+   - Reviews written during heatwaves (UK Jul/Aug) are particularly load-bearing for AC questions.
+4. **Strong proxies when direct evidence is thin** — use as *signal, not proof*, and mark inferred picks as such ("modern fit-out so likely AC, not confirmed"):
+   - Modern build / shopping centre / hotel / basement venue → AC near-certain.
+   - Listed building / Victorian pub / old converted warehouse → often no AC.
+   - Chain / fine-dining / modern Asian / sushi → AC near-certain.
+   - Sports bar → loud; omakase counter / tasting menu → quiet.
+
+Show the evidence trail briefly so the user can judge ("website mentions AC", "two reviews complain about heat", "inferred from building type").
+
+**B. The attribute came from a vibe direction *you* proposed** (e.g. user said "good for a summer day", you offered "air-conditioned" as one branch, they picked it). Don't escalate to website/review mining by default — that's expensive for what's still a guess at their preference. Instead, after the Places search, **flag in the response that the attribute isn't directly confirmable from the data**, and let them decide whether to enforce it. Example:
+
+> Heads-up: Places doesn't expose aircon as a field, so I've ranked by likely-AC proxies (modern build, indoor-focused). Want me to verify by checking websites/reviews?
+
+This keeps the default response tight while making the gap visible.
+
 ## Things to get right
 
 **Don't invent details.** Only state facts that came from the search results (rating, address, hours, listed features). Do not claim "great wine list" or "famous for X" unless the result data actually supports it. If the user wants a specific guarantee ("definitely has outdoor seating"), say where you got that — and if it's not in the data, say so and suggest they check the restaurant directly. **When using the (C) web_search fallback, this rule binds especially hard: snippets are paraphrased third-party prose, not authoritative facts. Hedge claims that aren't directly quoted in the snippet.**
