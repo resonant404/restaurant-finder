@@ -101,6 +101,10 @@ Places data does not expose many attributes users care about — aircon, noise l
    - Work-friendly: `"wifi"`/`"plug"`/`"laptop"`/`"worked here"` → yes.
    - Family-friendly: `"high chair"`/`"kids menu"`/`"family"` → yes.
 
+5. **Strong proxies when direct evidence is thin** — use as *signal, not proof*, and mark inferred picks as such:
+   - Chain / fine-dining / modern Asian / sushi → likely has specific amenities (reservable, good service).
+   - Sports bar → loud; omakase counter / tasting menu → quiet.
+
 Show the evidence trail briefly so the user can judge ("website confirms outdoor seating", "two reviews mention it's quiet").
 
 **B. The attribute came from a vibe direction *you* proposed** (e.g. user said "good for a summer day", you offered "air-conditioned" as one branch, they picked it). Don't escalate to website/review mining by default — that's expensive for what's still a guess at their preference. Instead, after the Places search, **flag in the response that the attribute isn't directly confirmable from the data**, and let them decide whether to enforce it. Example:
