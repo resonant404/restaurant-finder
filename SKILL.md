@@ -48,6 +48,36 @@ Help the user find a restaurant that actually matches what they want, including 
 
    **Query construction (all tiers):** combine resolved criteria with the location. "restaurants with terrace Soho London" beats "summery restaurants Soho" — concrete attributes outrank mood words. For multi-interpretation searches the user wants a mix of, fire parallel queries: multiple args to the script in (B), or multiple `web_search` / MCP calls in a single message.
 
+   ### Stay Cool London — AC-verified venue data
+
+   When the search is **in London** and involves air conditioning — whether explicitly ("must have AC", "air-conditioned") or via an interpretation branch the user picked ("cool inside", "escape the heat") — enrich results with AC data from **Stay Cool London** ([staycool.lol](https://staycool.lol)). This dataset covers 38,000+ London venues with AC status derived from EPC energy certificates, chain verification, and building data.
+
+   **How to use it.** Run the bundled script via Bash alongside your main search:
+   ```
+   python3 "$SKILL_DIR/scripts/staycool_search.py" [options]
+   ```
+
+   Options (all optional, combine freely):
+   - `--q TEXT` — search by name, area, or postcode
+   - `--area AREA` — exact area (e.g. Soho, Shoreditch)
+   - `--category CAT` — restaurant, pub, cafe, bar, takeaway
+   - `--ac STATUSES` — comma-separated: confirmed,likely,unlikely (default: confirmed,likely)
+   - `--lat LAT --lng LNG` — user coordinates for proximity sort
+   - `--radius MILES` — max distance (requires lat/lng)
+   - `--limit N` — max results, default 20
+
+   The script hits the Stay Cool API (no API key required) and returns JSON with venue name, area, postcode, AC status, AC source, and a Google Maps link.
+
+   **When to query Stay Cool:**
+   - The user explicitly asks for AC / air conditioning in London.
+   - The user picked an "air-conditioned" / "cool inside" interpretation branch.
+   - The user asks about eating/drinking on a hot day in London and you're verifying which venues actually have AC.
+   - You're cross-referencing Google Places results against confirmed AC data.
+
+   **How to merge results.** Cross-reference Stay Cool venues against your Google Places results by matching on name and postcode. When a Places result matches a Stay Cool venue with `acStatus: "confirmed"`, you can state AC as fact. For `"likely"`, note it as probable. Use Stay Cool results to promote venues with confirmed AC higher in the ranking when AC matters.
+
+   If the user's query is *solely* about finding AC venues in London (no other criteria), Stay Cool alone may be sufficient — no need to also hit Google Places. Present results directly from the Stay Cool response, which includes Google Maps links for each venue.
+
 5. **Filter and rank.** Skim results for fit. Drop obvious mismatches (chain when they wanted independent, wrong cuisine, closed permanently, very low rating with few reviews). Rank by how well each matches the *actual* criteria, not just by Google rating.
 
 6. **Present as a ranked text list with reasoning per pick.** For each restaurant, give:
@@ -64,14 +94,15 @@ Places data does not expose many attributes users care about — aircon, noise l
 **A. User explicitly insists on the attribute** (e.g. "must have aircon", "needs to be quiet enough to talk", "definitely has high chairs"). Don't just hedge — actually try to verify. In rough order of effort:
 
 1. **Check Places fields you might have skipped.** `accessibilityOptions` is a real field — use it directly for wheelchair access rather than inferring. Same for `outdoor_seating` types, `reservable`, etc.
-2. **Restaurant website.** `WebFetch` the `websiteUri` from the Places result and search for the attribute (e.g. "air con", "climate control", "fully air conditioned"). Newer venues often advertise these.
-3. **Review text mining.** The Places result returns a handful of reviews. Skim them for keywords:
+2. **Stay Cool London (AC-specific, London only).** For air conditioning queries in London, query the Stay Cool API first — it has verified AC data for 38,000+ venues from EPC certificates and chain verification. A `confirmed` result from Stay Cool is stronger evidence than any other method below. See the "Stay Cool London" section under Search for usage.
+3. **Restaurant website.** `WebFetch` the `websiteUri` from the Places result and search for the attribute (e.g. "air con", "climate control", "fully air conditioned"). Newer venues often advertise these.
+4. **Review text mining.** The Places result returns a handful of reviews. Skim them for keywords:
    - AC: `"stuffy"`/`"hot inside"`/`"sweltering"` → likely no AC; `"freezing"`/`"too cold"`/`"bring a jacket"` → AC present.
    - Noise: `"loud"`/`"noisy"`/`"can't hear"` → loud; `"quiet"`/`"intimate"` → quiet.
    - Work-friendly: `"wifi"`/`"plug"`/`"laptop"`/`"worked here"` → yes.
    - Family-friendly: `"high chair"`/`"kids menu"`/`"family"` → yes.
    - Reviews written during heatwaves (UK Jul/Aug) are particularly load-bearing for AC questions.
-4. **Strong proxies when direct evidence is thin** — use as *signal, not proof*, and mark inferred picks as such ("modern fit-out so likely AC, not confirmed"):
+5. **Strong proxies when direct evidence is thin** — use as *signal, not proof*, and mark inferred picks as such ("modern fit-out so likely AC, not confirmed"):
    - Modern build / shopping centre / hotel / basement venue → AC near-certain.
    - Listed building / Victorian pub / old converted warehouse → often no AC.
    - Chain / fine-dining / modern Asian / sushi → AC near-certain.

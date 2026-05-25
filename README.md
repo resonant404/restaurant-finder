@@ -50,6 +50,10 @@ For the claude.ai upload zip, set the key before running `build.sh` and it'll be
 
 **3. Web search.** If neither (1) nor (2) is configured, the skill falls back to web search and prepends a warning to its response. Results work but lose structured fields (price level, current open status, etc.) and lean on paraphrased article snippets.
 
+### Stay Cool London (AC data)
+
+For London searches involving air conditioning, the skill automatically queries [Stay Cool London](https://staycool.lol) — a free dataset of 38,000+ London venues with verified AC status from EPC energy certificates and chain data. No API key required. The bundled `scripts/staycool_search.py` handles this; the skill calls it when AC matters.
+
 ## Using bws (Bitwarden Secrets Manager)
 
 If you keep the key in [bws](https://bitwarden.com/help/secrets-manager-cli/), the cleanest setup is to launch Claude Code itself under `bws run` — every subprocess (including the bundled script) then inherits the env var with zero extra plumbing.
