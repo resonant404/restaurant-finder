@@ -11,30 +11,26 @@ A Claude skill for finding restaurants that match what you actually want — whe
 
 ## Install
 
-### Claude.ai / Claude apps
-
-1. Download the `restaurant-finder.skill` file from the releases page (or build it yourself, see below).
-2. Upload it via **Settings → Capabilities → Skills → Upload skill**.
-
-### Claude Code
+Clone the repo and run the build script:
 
 ```bash
-npx skills add https://github.com/<your-username>/restaurant-finder
+git clone https://github.com/<your-username>/restaurant-finder
+cd restaurant-finder
+./build.sh
 ```
 
-Or clone into your skills directory:
+`build.sh` does two things:
+
+- **Installs into Claude Code** at `~/.claude/skills/restaurant-finder/`. Restart Claude Code and the skill is live.
+- **Builds an upload bundle** at `dist/restaurant-finder.zip`. Drag this into **Settings → Capabilities → Skills → Upload skill** on claude.ai.
+
+To pick up upstream changes later, just re-run it:
 
 ```bash
-git clone https://github.com/<your-username>/restaurant-finder ~/.claude/skills/restaurant-finder
+git pull && ./build.sh
 ```
 
-## Build the `.skill` file yourself
-
-The `.skill` file is just a zip of this folder. From the parent directory:
-
-```bash
-cd restaurant-finder && zip -r ../restaurant-finder.skill . -x "*.DS_Store" && cd ..
-```
+If you only want one target, set `SKIP_LOCAL_INSTALL=1` or `SKIP_ZIP=1` in the environment.
 
 ## Examples
 
