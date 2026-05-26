@@ -48,11 +48,16 @@ Help the user find a restaurant that actually matches what they want, including 
 
    **Query construction (all tiers):** combine resolved criteria with the location. "restaurants with terrace Soho London" beats "summery restaurants Soho" — concrete attributes outrank mood words. For multi-interpretation searches the user wants a mix of, fire parallel queries: multiple args to the script in (B), or multiple `web_search` / MCP calls in a single message.
 
-   ### Stay Cool London — AC-verified venue data
+   ### Stay Cool London — AC cross-reference
 
-   When the search is **in London** and involves air conditioning — whether explicitly ("must have AC", "air-conditioned") or via an interpretation branch the user picked ("cool inside", "escape the heat") — enrich results with AC data from **Stay Cool London** ([staycool.lol](https://staycool.lol)). This dataset covers 38,000+ London venues with AC status derived from EPC energy certificates, chain verification, and building data.
+   **Stay Cool London** ([staycool.lol](https://staycool.lol)) is a free, verified AC dataset covering 38,000+ London venues, with AC status derived from EPC energy certificates, chain verification, and building data. The skill uses it as a **cross-reference layer over the Places results above** — Places is always the source of the candidate venue list, and Stay Cool annotates those candidates with verified AC status.
 
-   **How to use it.** Run the bundled script via Bash alongside your main search:
+   **When to cross-reference (London only):**
+   - The user explicitly asks for AC / air conditioning.
+   - The user picked an "air-conditioned" / "cool inside" interpretation branch.
+   - The user mentions eating/drinking on a hot day and you want to rank with AC evidence.
+
+   **How to use it.** After Places returns its list, run the bundled script via Bash:
    ```
    python3 "$SKILL_DIR/scripts/staycool_search.py" [options]
    ```
@@ -68,15 +73,14 @@ Help the user find a restaurant that actually matches what they want, including 
 
    The script hits the Stay Cool API (no API key required) and returns JSON with venue name, area, postcode, AC status, AC source, and a Google Maps link.
 
-   **When to query Stay Cool:**
-   - The user explicitly asks for AC / air conditioning in London.
-   - The user picked an "air-conditioned" / "cool inside" interpretation branch.
-   - The user asks about eating/drinking on a hot day in London and you're verifying which venues actually have AC.
-   - You're cross-referencing Google Places results against confirmed AC data.
+   For borderline neighbourhoods (Farringdon overlapping Clerkenwell, Liverpool Street overlapping Bishopsgate, etc.), `--q <postcode-prefix>` (e.g. `--q EC2M`) or `--q <area-name>` gives broader first-pass coverage than `--area`.
 
-   **How to merge results.** Cross-reference Stay Cool venues against your Google Places results by matching on name and postcode. When a Places result matches a Stay Cool venue with `acStatus: "confirmed"`, you can state AC as fact. For `"likely"`, note it as probable. Use Stay Cool results to promote venues with confirmed AC higher in the ranking when AC matters.
+   **How to annotate.** For each Places result, look for a Stay Cool match by name + postcode. Three outcomes:
+   - **Match with `acStatus: "confirmed"`** → state AC as fact in the response, citing the Stay Cool source (e.g. EPC register, chain whitelist).
+   - **Match with `acStatus: "likely"`** → note it as probable, with the source.
+   - **No match** → mark AC as *unverified*. A same-postcode Stay Cool venue is a weaker indirect signal you can mention as a fallback, not as proof.
 
-   If the user's query is *solely* about finding AC venues in London (no other criteria), Stay Cool alone may be sufficient — no need to also hit Google Places. Present results directly from the Stay Cool response, which includes Google Maps links for each venue.
+   When AC is the main criterion, use the annotation to rank confirmed > likely > unverified within the Places shortlist. The venues you recommend always come from the Places results; Stay Cool's role is to attach the AC tag.
 
 5. **Filter and rank.** Skim results for fit. Drop obvious mismatches (chain when they wanted independent, wrong cuisine, closed permanently, very low rating with few reviews). Rank by how well each matches the *actual* criteria, not just by Google rating.
 
