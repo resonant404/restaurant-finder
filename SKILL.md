@@ -68,6 +68,12 @@ Help the user find a restaurant that actually matches what they want, including 
 
    The script hits the Stay Cool API (no API key required) and returns JSON with venue name, area, postcode, AC status, AC source, and a Google Maps link.
 
+   **Query economy — keep calls to a minimum.** Each search should fire **at most 2–3 Stay Cool calls total**. To cover an area efficiently:
+   - Query by **postcode district** (`W1`, `WC1`, `EC2M`), not by sub-postcode (`W1D`, `W1F`...). One district call covers all sub-postcodes inside it.
+   - Use **`--limit 200`** (the script's max) when you want broad coverage in one shot — same call cost, more data.
+   - Don't fire per-sub-postcode follow-ups to fill gaps. Bump `--limit` on the original call instead.
+   - `--area` is less reliable than `--q <district>` for borderline neighbourhoods (Farringdon may be classified under Clerkenwell, Liverpool Street under Bishopsgate). Prefer `--q` with a postcode district for first-pass coverage.
+
    **When to query Stay Cool:**
    - The user explicitly asks for AC / air conditioning in London.
    - The user picked an "air-conditioned" / "cool inside" interpretation branch.
